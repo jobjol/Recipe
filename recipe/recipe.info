@@ -1,0 +1,4 @@
+name = Recipe
+description = Create and store recipes
+core = 7.x
+package = Custom

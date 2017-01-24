@@ -1,0 +1,173 @@
+<?php
+/**
+ * @file
+ * The main functions of the recipe module
+ */
+
+/**
+ * Implementation of hook_permission().
+ */
+function recipe_permission() {
+  return array(
+    'recipe_add' => array(
+      'title' => t('Create recipes'),
+      'description' => t('Submit new recipes'),
+    ),
+    'recipe_manage' => array(
+      'title' => t('Manage recipes'),
+      'description' => t('Access recipes'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function recipe_menu() {
+  $items['recipe/add'] = array(
+    'title' => t('Submit a recipe'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recipe_add_form'),
+    'access arguments' => array('recipe_add'),
+    'type' => MENU_CALLBACK,
+    'file' => 'recipe.forms.inc',
+  );
+  $items['recipe/%'] = array(
+    'page callback' => 'recipe_page_callback',
+    'page arguments' => array(1),
+    'access arguments' => array('recipe_manage'),
+    'type' => MENU_CALLBACK,
+  );
+  // ** admin section **
+  $items['admin/recipe'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recipe_admin_form'),
+    'access arguments' => array('recipe_manage'),
+    'type' => MENU_CALLBACK,
+    'file' => 'recipe.forms.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function recipe_theme($existing, $type, $theme, $path) {
+  $recipe_theme = array();
+  $recipe_theme['recipe_view'] = array(
+    'template' => 'recipe_view',
+    'path' => drupal_get_path('module', 'recipe') . '/templates',
+  );
+  return $recipe_theme;
+}
+
+/**
+ *  Page Callback: displays a recipe.
+ *
+ * @param int $id
+ *
+ * @return html
+ *   A rendered recipe
+ *
+ */
+function recipe_page_callback($id) {
+  if (is_numeric($id)) {
+    $recipe = db_query('select * from {recipe} WHERE id = :id LIMIT 0,1',
+      array(':id' => $id))->fetchObject();
+    if($recipe) {
+      $languages = language_list();
+      $recipe->lang = $languages[$recipe->lang]->name;
+      return theme('recipe_view', array('recipe' => $recipe));
+    }
+    drupal_not_found();
+    return;
+  }
+  return FALSE;
+}
+
+/**
+ * Implementation of hook_FORM_ID_validate() for recipe_add_form().
+ */
+function recipe_add_form_validate($form, &$form_state) {
+  // If the lenght of the description field is greater then 500 throw an error
+  if (strlen($form_state['values']['description']) > 500) {
+    form_set_error('description', t('Description must be less then 500 characters'));
+  }
+  if (valid_email_address($form_state['values']['email'])) {
+    form_set_error('email', t('Invalid email address'));
+  }
+}
+
+/**
+ * Implementation of hook_FORM_ID_submit() for recipe_add_form()
+ */
+function recipe_add_form_submit($form, &$form_state) {
+  global $language, $base_url;
+
+  $record = db_insert('recipe')
+    ->fields(array(
+      'created' => time(),
+      'lang' => $language->language,
+      'title' => $form_state['values']['title'],
+      'author' => $form_state['values']['author'],
+      'email' => $form_state['values']['title'],
+      'description' => $form_state['values']['description'],
+      'instruction' => $form_state['values']['instructions'],
+      'ingredients' => $form_state['values']['ingredients'],
+    ))->execute();
+
+  //send a notification when mail address in system var is set
+  if ($to = variable_get('recipe_mailto', false)) {
+    recipe_drupal_mail(
+      $to,
+      t('New recipe'),
+      $base_url . '/recipe/' . $record,
+      'default_from');
+  }
+
+  drupal_set_message(t('The recipe has been succesfully submitted'));
+  drupal_goto('/');
+}
+
+/**
+ * Wrapper function for drupal_mail() to avoid extraneous code.
+ *
+ * @param string $to
+ *   Email to address
+ * @param string $subject
+ *   Email subject
+ * @param string $message
+ *   Email body
+ * @from string
+ *   Email sender address
+ *
+ * @return bool
+ *   False if unsuccesful, true when sent succesfully
+ */
+function recipe_drupal_mail($to, $subject, $message, $from = 'default_from') {
+  $my_module = 'recipe';
+  $my_mail_token = microtime();
+  if ($from == 'default_from') {
+    $from = variable_get('system_mail', 'info@jobjol.com');
+  }
+  $message = array(
+    'id' => $my_module . '_' . $my_mail_token,
+    'to' => $to,
+    'subject' => $subject,
+    'body' => array($message),
+    'headers' => array(
+      'From' => $from,
+      'Sender' => $from,
+      'Return-Path' => $from,
+    ),
+  );
+  $system = drupal_mail_system($my_module, $my_mail_token);
+  $message = $system->format($message);
+  if ($system->mail($message)) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+

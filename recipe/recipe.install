@@ -1,0 +1,89 @@
+<?php
+/**
+ * @file
+ * Install, update, and uninstall functions for the recipe module.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function recipe_schema() {
+  $schema['recipe'] = array(
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a recipe.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The timestamp of recipe created',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'lang' => array(
+        'description' => 'The language identifier in ISO code.',
+        'type' => 'varchar',
+        'length' => 4,
+        'not null' => TRUE,
+        'default' => 'EN',
+      ),
+      'title' => array(
+        'description' => 'The title of this recipe.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'author' => array(
+        'description' => 'The author of this node.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'email' => array(
+        'description' => 'The authors email address.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'The recipe description.',
+        'type' => 'text',
+        'length' => 512,
+        'not null' => FALSE,
+      ),
+      'instruction' => array(
+        'description' => 'The recipe instructions.',
+        'type' => 'text',
+        'length' => 10000,
+        'not null' => FALSE,
+      ),
+      'ingredients' => array(
+        'description' => 'The recipe ingredients.',
+        'type' => 'text',
+        'length' => 10000,
+        'not null' => FALSE,
+      ),
+    ),
+    'indexes' => array(
+      'recipe_created' => array('created'),
+    ),
+    'unique keys' => array(
+      'id' => array('id'),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function recipe_uninstall() {
+  // Delete our module variable
+  variable_del('recipe_mailto');
+}
