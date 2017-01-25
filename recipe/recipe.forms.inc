@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Defines forms for the recipe module.
@@ -6,10 +7,7 @@
 
 
 /**
- * Custom function.
- *
- * @return array()
- *   render array for the add recipe form.
+ * Implements hook_form().
  *
 */
 function recipe_add_form($form, &$form_state) {
@@ -51,10 +49,8 @@ function recipe_add_form($form, &$form_state) {
 }
 
 /**
- * Custom function.
+ * Implements hook_form().
  *
- * @return array()
- *   render array for the admin configuration form.
  */
 function recipe_admin_form($form, &$form_state) {
   $form['recipe_mailto'] = array(

@@ -1,7 +1,8 @@
 <?php
+
 /**
  * @file
- * The main functions of the recipe module
+ * Provides functions for recipe module
  */
 
 /**
@@ -38,7 +39,7 @@ function recipe_menu() {
     'access arguments' => array('recipe_manage'),
     'type' => MENU_CALLBACK,
   );
-  // ** admin section **
+  // ** admin pages **
   $items['admin/recipe'] = array(
     'page callback' => 'drupal_get_form',
     'page arguments' => array('recipe_admin_form'),
@@ -65,24 +66,21 @@ function recipe_theme($existing, $type, $theme, $path) {
  *  Page Callback: displays a recipe.
  *
  * @param int $id
- *
- * @return html
- *   A rendered recipe
+ *   Identifier of the recipe
  *
  */
 function recipe_page_callback($id) {
   if (is_numeric($id)) {
     $recipe = db_query('select * from {recipe} WHERE id = :id LIMIT 0,1',
       array(':id' => $id))->fetchObject();
-    if($recipe) {
+    if ($recipe) {
       $languages = language_list();
       $recipe->lang = $languages[$recipe->lang]->name;
       return theme('recipe_view', array('recipe' => $recipe));
     }
-    drupal_not_found();
-    return;
+    return drupal_not_found();
   }
-  return FALSE;
+  return false;
 }
 
 /**
@@ -138,7 +136,7 @@ function recipe_add_form_submit($form, &$form_state) {
  *   Email subject
  * @param string $message
  *   Email body
- * @from string
+ * @param string $from
  *   Email sender address
  *
  * @return bool
@@ -148,7 +146,7 @@ function recipe_drupal_mail($to, $subject, $message, $from = 'default_from') {
   $my_module = 'recipe';
   $my_mail_token = microtime();
   if ($from == 'default_from') {
-    $from = variable_get('system_mail', 'info@jobjol.com');
+    $from = variable_get('system_mail', 'example@example.com');
   }
   $message = array(
     'id' => $my_module . '_' . $my_mail_token,
@@ -164,10 +162,10 @@ function recipe_drupal_mail($to, $subject, $message, $from = 'default_from') {
   $system = drupal_mail_system($my_module, $my_mail_token);
   $message = $system->format($message);
   if ($system->mail($message)) {
-    return TRUE;
+    return true;
   }
   else {
-    return FALSE;
+    return false;
   }
 }
 
