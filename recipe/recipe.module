@@ -91,7 +91,7 @@ function recipe_add_form_validate($form, &$form_state) {
   if (strlen($form_state['values']['description']) > 500) {
     form_set_error('description', t('Description must be less then 500 characters'));
   }
-  if (valid_email_address($form_state['values']['email'])) {
+  if (!valid_email_address($form_state['values']['email'])) {
     form_set_error('email', t('Invalid email address'));
   }
 }
